@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Broker de Mensajes
+  rabbitmq:
+    image: "rabbitmq:3.13-management"
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=user
+      - RABBITMQ_DEFAULT_PASS=password
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Base de Datos
+  mysql:
+    image: "mysql:8.0"
+    container_name: mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=ordenes_db
+      - MYSQL_USER=root
+      - MYSQL_PASSWORD=
+    volumes:
+      - mysql_data:/var/lib/mysql
+
+volumes:
+  rabbitmq_data:
+  mysql_data:
