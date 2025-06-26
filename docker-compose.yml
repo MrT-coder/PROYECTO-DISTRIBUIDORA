@@ -56,6 +56,29 @@ services:
     networks:
       - distribuidora-net
 
+  # Base de datos para el Servicio de Cobros
+  mysql-cobros:
+    image: "mysql:8.0"
+    container_name: mysql-cobros
+    ports:
+      - "3308:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=rootpassword
+      - MYSQL_DATABASE=cobros_db
+      - MYSQL_USER=user
+      - MYSQL_PASSWORD=123
+    volumes:
+      - mysql_cobros:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    # --- AÑADIDO: Conectar a nuestra red ---
+    networks:
+      - distribuidora-net
+
   # MicroServicio de Órdenes
   servicio-ordenes:
     build:
@@ -97,6 +120,26 @@ services:
     networks:
       - distribuidora-net
 
+  # MicroServicio de Cobros
+  servicio-cobros:
+    build:
+      context: ./servicio-cobros
+    container_name: servicio-cobros
+    ports:
+      - "8082:8082"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-cobros:3306/cobros_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=123
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      mysql-cobros:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - distribuidora-net
+
 # --- Definición de la red compartida ---
 networks:
   distribuidora-net:
@@ -105,3 +148,4 @@ networks:
 volumes:
   mysql_data:
   mysql_inventario:
+  mysql_cobros:
