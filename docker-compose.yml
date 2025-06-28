@@ -11,7 +11,7 @@ services:
     networks:
       - distribuidora-net
 
-# Base de datos GENERAL
+  # Base de datos GENERAL
   mysql:
     image: "mysql:8.0"
     container_name: mysql
@@ -95,7 +95,7 @@ services:
     networks:
       - distribuidora-net
       
-       #Microservicio de Despacho
+  # Microservicio de Despacho
   servicio-despacho:
     build:
       context: ./servicio-despacho
