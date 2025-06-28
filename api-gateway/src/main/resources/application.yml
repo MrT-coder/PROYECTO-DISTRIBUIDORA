@@ -1,0 +1,27 @@
+# Puerto en el que correrá nuestro API Gateway
+server:
+  port: 8090
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # Ruta para el Servicio de Órdenes
+        - id: servicio-ordenes
+          uri: http://servicio-ordenes:8080 # Apunta al contenedor por su nombre de servicio y puerto interno
+          predicates:
+            - Path=/api/orders/**
+
+        # Ruta para el Servicio de Inventario
+        - id: servicio-inventario
+          uri: http://servicio-inventario:8081
+          predicates:
+            - Path=/api/inventario/**
+
+        # Ruta para el Servicio de Envío
+        - id: servicio-envio
+          uri: http://servicio-envio:8084
+          predicates:
+            - Path=/api/shipping/**

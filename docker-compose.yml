@@ -134,6 +134,30 @@ services:
         condition: service_started
     networks:
       - distribuidora-net
+  # API Gateway
+  api-gateway:
+    build:
+      context: ./api-gateway
+    container_name: api-gateway
+    ports:
+      - "8090:8090"
+    environment:
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      rabbitmq:
+        condition: service_started
+      servicio-ordenes:
+        condition: service_started
+      servicio-inventario:
+        condition: service_started
+      servicio-cobros:
+        condition: service_started
+      servicio-despacho:
+        condition: service_started
+      servicio-envio:
+        condition: service_started
+    networks:
+      - distribuidora-net
 # --- Definición de la red compartida ---
 networks:
   distribuidora-net:
