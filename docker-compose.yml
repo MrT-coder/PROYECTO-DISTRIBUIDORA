@@ -115,6 +115,25 @@ services:
     networks:
       - distribuidora-net
 
+# Microservicio de Envios
+  servicio-envio:
+    build:
+      context: ./servicio-envio
+    container_name: servicio-envio
+    ports:
+      - "8084:8084" # Puerto diferente
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/envio_db?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=123
+      - SPRING_RABBITMQ_HOST=rabbitmq
+    depends_on:
+      mysql:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_started
+    networks:
+      - distribuidora-net
 # --- Definición de la red compartida ---
 networks:
   distribuidora-net:
