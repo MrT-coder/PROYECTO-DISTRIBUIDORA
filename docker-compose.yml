@@ -58,7 +58,7 @@ services:
   # MicroServicio de Inventario
   servicio-inventario:
     build:
-      context: ./servicio_inventario
+      context: ./servicio-inventario
     container_name: servicio-inventario
     ports:
       - "8081:8081"
