@@ -1,0 +1,12 @@
+{
+  "dependencies": {
+    "@heroicons/react": "^2.2.0",
+    "@types/node-fetch": "^2.6.12",
+    "axios": "^1.10.0",
+    "node-fetch": "^3.3.2",
+    "react-query": "^3.39.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.7"
+  }
+}
