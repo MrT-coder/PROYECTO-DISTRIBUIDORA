@@ -1,6 +1,8 @@
 package com.distribuidora.servicio_ordenes.controller;
 
 
+import java.util.List;
+
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -14,6 +16,13 @@ import com.distribuidora.servicio_ordenes.service.OrderService;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
+
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+
+
 
 @RestController
 @RequestMapping("/api/orders")
@@ -34,4 +43,25 @@ public class OrderController {
         Order nuevaOrden = orderService.createOrder(orderRequest);
         return new ResponseEntity<>(nuevaOrden, HttpStatus.CREATED);
     }
+    // listar todas las ordenes
+    @GetMapping("/list")
+    public ResponseEntity<List<Order>> getAllOrders() {
+        List<Order> orders = orderService.getAllOrders();
+        return new ResponseEntity<>(orders, HttpStatus.OK);
+    }
+
+    //Editar orden
+    @PutMapping("/{id}")
+    public ResponseEntity<Order> updateOrder(@PathVariable String id, @RequestBody OrdenCreadaEvent orderRequest) {
+        Order updatedOrder = orderService.updateOrder(id, orderRequest);
+        return new ResponseEntity<>(updatedOrder, HttpStatus.OK);
+    }
+
+    //Eliminar orden
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteOrder(@PathVariable String id) {
+        orderService.deleteOrder(id);
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
+    }
+    
 }

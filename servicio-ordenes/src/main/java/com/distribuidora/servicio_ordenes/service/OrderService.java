@@ -7,6 +7,7 @@ import com.distribuidora.servicio_ordenes.dto.OrdenCreadaEvent;
 import com.distribuidora.servicio_ordenes.model.Order;
 import com.distribuidora.servicio_ordenes.repository.OrderRepository;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -18,6 +19,30 @@ public class OrderService {
     public OrderService(OrderRepository orderRepository, OrderEventProducer orderEventProducer) {
         this.orderRepository = orderRepository;
         this.orderEventProducer = orderEventProducer;
+    }
+
+    //Listar todas las ordenes
+    public List<Order> getAllOrders() {
+        return orderRepository.findAll();
+    }
+
+    //Editar orden
+    public Order updateOrder(String id, OrdenCreadaEvent orderRequest) {
+        // 1. Buscar la orden por ID
+        Order existingOrder = orderRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Orden no encontrada"));
+
+        // 2. Actualizar los campos necesarios
+        existingOrder.setClienteId(orderRequest.getClienteId());
+        existingOrder.setMontoTotal(orderRequest.getMontoTotal());
+        existingOrder.setStatus("ACTUALIZADA"); // Cambiar el estado si es necesario
+
+        // 3. Guardar la orden actualizada en la base de datos
+        return orderRepository.save(existingOrder);
+    }
+    //Eliminar orden
+    public void deleteOrder(String id) {
+        orderRepository.deleteById(id);
     }
 
     public Order createOrder(OrdenCreadaEvent orderRequest) {
