@@ -6,4 +6,7 @@ import org.springframework.stereotype.Repository;
 import com.distribuidora.servicio_despacho.model.DispatchState;
 
 @Repository
-public interface DispatchRepository extends JpaRepository<DispatchState, String> {}
+public interface DispatchRepository extends JpaRepository<DispatchState, String> {
+
+    DispatchState findByEstado(String estado);
+}

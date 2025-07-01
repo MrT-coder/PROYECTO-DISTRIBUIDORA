@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.distribuidora.servicio_envio.model.Shipment;
 import com.distribuidora.servicio_envio.service.ShippingService;
+import org.springframework.web.bind.annotation.RequestParam;
+
 
 @RestController
 @RequestMapping("/api/shipping")
@@ -35,4 +37,15 @@ public class ShippingController {
         String newState = statusUpdate.get("status");
         return ResponseEntity.ok(shippingService.updateStatus(orderId, newState));
     }
+
+    //Listar todos los envíos
+    @GetMapping("/list")
+    public ResponseEntity<?> listarEnvios(@RequestParam(required = false) String estado) {
+        if (estado != null) {
+            return ResponseEntity.ok(shippingService.findByEstado(estado));
+        } else {
+            return ResponseEntity.ok(shippingService.findAll());
+        }
+    }
+    
 }

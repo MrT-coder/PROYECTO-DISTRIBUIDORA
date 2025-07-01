@@ -124,14 +124,6 @@ export function DispatchTab() {
         </CardHeader>
 
         <CardContent className="p-4 sm:p-6 space-y-6">
-            {/* --- Sección de Estadísticas --- */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card className="border-slate-200/60"><CardHeader><CardTitle className="text-sm font-medium text-slate-500">Total de Órdenes</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-slate-800">{stats.total}</div></CardContent></Card>
-                <Card className="border-green-200/60 bg-green-50/50"><CardHeader><CardTitle className="text-sm font-medium text-green-600">Listas para Despacho</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-green-700">{stats.ready}</div></CardContent></Card>
-                <Card className="border-amber-200/60 bg-amber-50/50"><CardHeader><CardTitle className="text-sm font-medium text-amber-600">En Espera</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-amber-700">{stats.waiting}</div></CardContent></Card>
-                <Card className="border-blue-200/60 bg-blue-50/50"><CardHeader><CardTitle className="text-sm font-medium text-blue-600">Ya Despachadas</CardTitle></CardHeader><CardContent><div className="text-2xl font-bold text-blue-700">{stats.dispatched}</div></CardContent></Card>
-            </div>
-
             {/* --- Sección de la Tabla de Control --- */}
             <div>
               <div className="flex flex-col sm:flex-row items-center gap-4 mb-5">

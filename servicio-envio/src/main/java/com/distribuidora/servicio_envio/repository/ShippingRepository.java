@@ -10,4 +10,5 @@ import com.distribuidora.servicio_envio.model.Shipment;
 @Repository
 public interface ShippingRepository extends JpaRepository<Shipment, Long> {
     Optional<Shipment> findByOrdenId(String ordenId);
+    Iterable<Shipment> findByStatus(String status);
 }

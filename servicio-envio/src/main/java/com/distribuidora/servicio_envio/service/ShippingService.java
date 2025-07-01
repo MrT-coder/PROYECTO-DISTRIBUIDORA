@@ -44,4 +44,12 @@ public class ShippingService {
     public Optional<Shipment> findByOrdenId(String ordenId) {
         return repository.findByOrdenId(ordenId);
     }
+
+    public Iterable<Shipment> findAll() {
+        return repository.findAll();
+    }
+
+    public Iterable<Shipment> findByEstado(String estado) {
+        return repository.findByStatus(estado);
+    }
 }

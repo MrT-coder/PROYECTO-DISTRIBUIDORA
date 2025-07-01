@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Card,
   CardContent,
@@ -39,7 +39,7 @@ import { toast } from "sonner";
 
 interface Shipment {
   id?: number;
-  orderId: string;
+  ordenId: string;
   status: string;
   trackingNumber?: string;
   createdAt?: string;
@@ -49,50 +49,33 @@ export function ShippingTab() {
   const [shipments, setShipments] = useState<Shipment[]>([]);
   const [loading, setLoading] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [consultOrderId, setConsultOrderId] = useState("");
   const [updateOrderId, setUpdateOrderId] = useState("");
   const [newStatus, setNewStatus] = useState("");
 
-  const consultarEnvio = async (orderIdToConsult: string) => {
-    if (!orderIdToConsult.trim()) {
-      toast.error("Por favor, ingresa un ID de orden válido.");
-      return;
-    }
+  // --- NUEVA: Función para cargar TODOS los envíos ---
+  const fetchShipments = async () => {
     setLoading(true);
-    const promise = fetch(
-      `http://localhost:8090/api/envio/${orderIdToConsult}`
-    );
-
-    toast.promise(promise, {
-      loading: `Consultando envío para la orden ${orderIdToConsult}...`,
-      success: async (response) => {
-        if (response.ok) {
-          const data = await response.json();
-          setShipments((prev) => {
-            const existingIndex = prev.findIndex(
-              (s) => s.orderId === data.orderId
-            );
-            if (existingIndex > -1) {
-              const updated = [...prev];
-              updated[existingIndex] = data;
-              return updated;
-            }
-            return [data, ...prev];
-          });
-          setConsultOrderId(""); // Limpiar input tras éxito
-          return `Envío encontrado: ${data.status}`;
-        }
-        if (response.status === 404) {
-          throw new Error("No se encontró un envío para esta orden.");
-        }
-        const errorText = await response.text();
-        throw new Error(errorText || "Error del servidor.");
-      },
-      error: (err) => err.message,
-      finally: () => setLoading(false),
-    });
+    try {
+      const response = await fetch("http://localhost:8090/api/shipping/list");
+      if (!response.ok) throw new Error("Error del servidor al listar envíos.");
+      const data: Shipment[] = await response.json();
+      setShipments(data);
+    } catch (error) {
+      toast.error("No se pudieron cargar los envíos", {
+        description:
+          error instanceof Error ? error.message : "Error desconocido.",
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
+  // --- Cargar los envíos al montar el componente ---
+  useEffect(() => {
+    fetchShipments();
+  }, []);
+
+  // --- Función para actualizar un estado específico ---
   const actualizarEstado = async () => {
     if (!updateOrderId || !newStatus) {
       toast.error(
@@ -102,7 +85,7 @@ export function ShippingTab() {
     }
 
     const promise = fetch(
-      `http://localhost:8090/api/envio/${updateOrderId}/status`,
+      `http://localhost:8090/api/shipping/${updateOrderId}/status`, // URL Corregida
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -113,18 +96,19 @@ export function ShippingTab() {
     toast.promise(promise, {
       loading: `Actualizando estado para la orden ${updateOrderId}...`,
       success: async (response) => {
-        if (response.ok) {
-          setShipments((prev) =>
-            prev.map((s) =>
-              s.orderId === updateOrderId ? { ...s, status: newStatus } : s
-            )
-          );
-          setUpdateOrderId("");
-          setNewStatus("");
-          return "Estado del envío actualizado.";
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(errorText || "Error del servidor al actualizar.");
         }
-        const errorText = await response.text();
-        throw new Error(errorText || "Error del servidor al actualizar.");
+        // Actualizar el estado en la lista local para reflejar el cambio al instante
+        setShipments((prev) =>
+          prev.map((s) =>
+            s.ordenId === updateOrderId ? { ...s, status: newStatus } : s
+          )
+        );
+        setUpdateOrderId("");
+        setNewStatus("");
+        return "Estado del envío actualizado.";
       },
       error: (err) => err.message,
     });
@@ -132,7 +116,7 @@ export function ShippingTab() {
 
   const filteredShipments = shipments.filter(
     (shipment) =>
-      shipment.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (shipment.ordenId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (shipment.trackingNumber &&
         shipment.trackingNumber
           .toLowerCase()
@@ -150,13 +134,13 @@ export function ShippingTab() {
           Entregado
         </Badge>
       );
-    if (s.includes("transit") || s.includes("transito"))
+    if (s.includes("sent") || s.includes("enviado"))
       return (
         <Badge
           variant="outline"
           className="bg-amber-100 text-amber-800 border-amber-200"
         >
-          En Tránsito
+          Enviado
         </Badge>
       );
     if (s.includes("cancelled") || s.includes("cancelado"))
@@ -168,23 +152,14 @@ export function ShippingTab() {
           Cancelado
         </Badge>
       );
-    if (s.includes("created") || s.includes("creado"))
-      return (
-        <Badge
-          variant="outline"
-          className="bg-blue-100 text-blue-800 border-blue-200"
-        >
-          Creado
-        </Badge>
-      );
     return <Badge variant="secondary">{status || "Desconocido"}</Badge>;
   };
 
   const statusOptions = [
     { value: "CREATED", label: "Creado" },
-    { value: "IN_TRANSIT", label: "En Tránsito" },
-    { value: "DELIVERED", label: "Entregado" },
-    { value: "CANCELLED", label: "Cancelado" },
+    { value: "ENVIADO", label: "Enviado" },
+    { value: "ENTREGADO", label: "Entregado" },
+    { value: "CANCELADO", label: "Cancelado" },
   ];
 
   const stats = {
@@ -214,86 +189,18 @@ export function ShippingTab() {
       </CardHeader>
 
       <CardContent className="p-4 sm:p-6 space-y-8">
-        {/* --- Sección de Estadísticas --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-          <Card className="border-blue-200/60 bg-blue-50/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-blue-600">
-                Total de Envíos
-              </CardTitle>
-              <Package2 className="w-5 h-5 text-blue-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-blue-700">
-                {stats.total}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-amber-200/60 bg-amber-50/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-amber-600">
-                En Tránsito
-              </CardTitle>
-              <Truck className="w-5 h-5 text-amber-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-amber-700">
-                {stats.inTransit}
-              </div>
-            </CardContent>
-          </Card>
-          <Card className="border-green-200/60 bg-green-50/50">
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-green-600">
-                Entregados
-              </CardTitle>
-              <MapPin className="w-5 h-5 text-green-500" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-3xl font-bold text-green-700">
-                {stats.delivered}
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* --- Panel de Acciones --- */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="border-slate-200/60">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-slate-800">
-                Consultar Envío
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <Label
-                htmlFor="consultOrderId"
-                className="font-medium text-slate-600"
-              >
-                ID de la Orden
-              </Label>
-              <Input
-                id="consultOrderId"
-                placeholder="orden-123"
-                value={consultOrderId}
-                onChange={(e) => setConsultOrderId(e.target.value)}
-              />
-              <Button
-                onClick={() => consultarEnvio(consultOrderId)}
-                className="w-full font-bold text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:opacity-90 transition-opacity"
-                disabled={loading}
-              >
-                {loading ? "Consultando..." : "Consultar"}
-              </Button>
-            </CardContent>
-          </Card>
-          <Card className="border-slate-200/60">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-slate-700">
-                Actualizar Estado
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
+        {/* --- Panel de Acciones: Simplificado a solo Actualizar Estado --- */}
+        <Card className="border-slate-200/60">
+          <CardHeader>
+            <CardTitle className="text-lg font-semibold text-slate-700">
+              Actualizar Estado de Envío
+            </CardTitle>
+            <CardDescription className="text-sm text-slate-500">
+              Modifica el estado de un envío existente usando su ID de orden.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="md:col-span-1">
               <Label
                 htmlFor="updateOrderId"
                 className="font-medium text-slate-600"
@@ -306,6 +213,8 @@ export function ShippingTab() {
                 value={updateOrderId}
                 onChange={(e) => setUpdateOrderId(e.target.value)}
               />
+            </div>
+            <div className="md:col-span-1">
               <Label htmlFor="newStatus" className="font-medium text-slate-600">
                 Nuevo Estado
               </Label>
@@ -313,7 +222,7 @@ export function ShippingTab() {
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un estado..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60 overflow-y-auto bg-black z-50">
                   {statusOptions.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
@@ -321,15 +230,15 @@ export function ShippingTab() {
                   ))}
                 </SelectContent>
               </Select>
-              <Button
-                onClick={actualizarEstado}
-                className="w-full font-bold text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:opacity-90 transition-opacity"
-              >
-                Actualizar Estado
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
+            <Button
+              onClick={actualizarEstado}
+              className="w-full md:col-span-1 font-bold text-white bg-gradient-to-r from-blue-500 to-teal-400 hover:opacity-90 transition-opacity"
+            >
+              Actualizar Estado
+            </Button>
+          </CardContent>
+        </Card>
 
         {/* --- Tabla de Resultados --- */}
         <div>
@@ -343,6 +252,16 @@ export function ShippingTab() {
                 className="pl-9"
               />
             </div>
+            <Button
+              onClick={fetchShipments}
+              variant="outline"
+              className="w-full sm:w-auto"
+            >
+              <RefreshCw
+                className={`w-4 h-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              />
+              Actualizar Lista
+            </Button>
           </div>
           <div className="rounded-lg border border-slate-200/80 overflow-hidden">
             <Table>
@@ -357,45 +276,40 @@ export function ShippingTab() {
                   <TableHead className="text-slate-600 font-semibold">
                     Estado
                   </TableHead>
-                  <TableHead className="text-right text-slate-600 font-semibold">
-                    Acciones
-                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredShipments.length === 0 ? (
+                {loading ? (
                   <TableRow>
                     <TableCell
-                      colSpan={4}
+                      colSpan={3}
                       className="text-center py-12 text-slate-500"
                     >
-                      No hay envíos para mostrar. Realiza una consulta para
-                      comenzar.
+                      Cargando envíos...
+                    </TableCell>
+                  </TableRow>
+                ) : filteredShipments.length === 0 ? (
+                  <TableRow>
+                    <TableCell
+                      colSpan={3}
+                      className="text-center py-12 text-slate-500"
+                    >
+                      No se encontraron envíos en el sistema.
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredShipments.map((shipment, index) => (
                     <TableRow
-                      key={shipment.orderId || index}
+                      key={shipment.ordenId || index}
                       className="hover:bg-slate-50/50 transition-colors"
                     >
                       <TableCell className="font-mono text-xs text-slate-700">
-                        {shipment.orderId}
+                        {shipment.ordenId}
                       </TableCell>
                       <TableCell className="font-mono text-xs text-slate-600">
-                        {shipment.trackingNumber || "N/A"}
+                        {shipment.trackingNumber}
                       </TableCell>
                       <TableCell>{getStatusBadge(shipment.status)}</TableCell>
-                      <TableCell className="text-right">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => consultarEnvio(shipment.orderId)}
-                        >
-                          <RefreshCw className="w-3 h-3 mr-2" />
-                          Actualizar
-                        </Button>
-                      </TableCell>
                     </TableRow>
                   ))
                 )}

@@ -1,5 +1,7 @@
 package com.distribuidora.servicio_despacho.service;
 
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.distribuidora.servicio_despacho.dto.OrdenListaParaEnvioEvent;
@@ -16,6 +18,26 @@ public class DispatchService {
     public DispatchService(DispatchRepository repository, DispatchEventProducer eventProducer) {
         this.repository = repository;
         this.eventProducer = eventProducer;
+    }
+
+    @Transactional
+    public DispatchState updateStatus(String orderId, String newStatus) {
+        DispatchState state = repository.findById(orderId)
+            .orElse(new DispatchState(orderId, false, false, "ESPERANDO_CONFIRMACIONES"));
+
+        state.setStatus(newStatus);
+        repository.save(state);
+        return state;
+    }
+
+    @Transactional
+    public DispatchState findByEstado(String estado) {
+        return repository.findByEstado(estado);
+    }
+
+    @Transactional
+    public List<DispatchState> findAll() {
+        return repository.findAll();
     }
 
     @Transactional
