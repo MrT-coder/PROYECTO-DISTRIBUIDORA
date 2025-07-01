@@ -3,6 +3,9 @@ package com.distribuidora.servicio_cobros.service;
 
 
 import jakarta.transaction.Transactional;
+
+import java.util.List;
+
 import org.springframework.stereotype.Service;
 
 import com.distribuidora.servicio_cobros.adpater.PaymentGatewayAdapter;
@@ -23,6 +26,11 @@ public class PaymentService {
         this.paymentGateway = paymentGateway;
         this.eventProducer = eventProducer;
         this.repository = repository;
+    }
+
+    //mostrar la lista de cobros
+    public List<PaymentTransaction> obtenerCobros() {
+        return repository.findAll();
     }
 
     @Transactional

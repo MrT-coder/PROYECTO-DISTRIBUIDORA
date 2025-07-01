@@ -19,10 +19,20 @@ spring:
           predicates:
             - Path=/api/inventario/**
           uri: http://servicio-inventario:8081
-          
 
         # Ruta para el Servicio de Envío
         - id: servicio-envio
           predicates:
             - Path=/api/shipping/**
           uri: http://servicio-envio:8084
+        # Servicio de Cobros
+        - id: servicio-cobros
+          predicates:
+            - Path=/api/cobros/**
+          uri: http://servicio-cobros:8082
+
+        #Servicio Despacho
+        - id: servicio-despacho
+          predicates:
+            - Path=/api/dispatch/**
+          uri: http://servicio-despacho:8083
