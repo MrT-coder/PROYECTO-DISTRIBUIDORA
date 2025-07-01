@@ -27,14 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  Truck,
-  Search,
-  Package2,
-  MapPin,
-  RefreshCw,
-  AlertTriangle,
-} from "lucide-react";
+import { Truck, Search, Package2, MapPin, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 
 interface Shipment {
@@ -52,7 +45,6 @@ export function ShippingTab() {
   const [updateOrderId, setUpdateOrderId] = useState("");
   const [newStatus, setNewStatus] = useState("");
 
-  // --- NUEVA: Función para cargar TODOS los envíos ---
   const fetchShipments = async () => {
     setLoading(true);
     try {
@@ -70,12 +62,10 @@ export function ShippingTab() {
     }
   };
 
-  // --- Cargar los envíos al montar el componente ---
   useEffect(() => {
     fetchShipments();
   }, []);
 
-  // --- Función para actualizar un estado específico ---
   const actualizarEstado = async () => {
     if (!updateOrderId || !newStatus) {
       toast.error(
@@ -85,7 +75,7 @@ export function ShippingTab() {
     }
 
     const promise = fetch(
-      `http://localhost:8090/api/shipping/${updateOrderId}/status`, // URL Corregida
+      `http://localhost:8090/api/shipping/${updateOrderId}/status`,
       {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
@@ -100,7 +90,6 @@ export function ShippingTab() {
           const errorText = await response.text();
           throw new Error(errorText || "Error del servidor al actualizar.");
         }
-        // Actualizar el estado en la lista local para reflejar el cambio al instante
         setShipments((prev) =>
           prev.map((s) =>
             s.ordenId === updateOrderId ? { ...s, status: newStatus } : s
@@ -116,15 +105,18 @@ export function ShippingTab() {
 
   const filteredShipments = shipments.filter(
     (shipment) =>
-      (shipment.ordenId || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (shipment.ordenId || "")
+        .toLowerCase()
+        .includes(searchTerm.toLowerCase()) ||
       (shipment.trackingNumber &&
         shipment.trackingNumber
           .toLowerCase()
           .includes(searchTerm.toLowerCase()))
   );
 
+  // --- AJUSTADO: Se añade un caso para "CREADO" ---
   const getStatusBadge = (status: string) => {
-    const s = status?.toLowerCase();
+    const s = status?.toLowerCase() || "";
     if (s.includes("delivered") || s.includes("entregado"))
       return (
         <Badge
@@ -143,6 +135,15 @@ export function ShippingTab() {
           Enviado
         </Badge>
       );
+    if (s.includes("created") || s.includes("creado"))
+      return (
+        <Badge
+          variant="outline"
+          className="bg-blue-100 text-blue-800 border-blue-200"
+        >
+          Creado
+        </Badge>
+      );
     if (s.includes("cancelled") || s.includes("cancelado"))
       return (
         <Badge
@@ -155,19 +156,20 @@ export function ShippingTab() {
     return <Badge variant="secondary">{status || "Desconocido"}</Badge>;
   };
 
+  // --- AJUSTADO: Opciones para actualizar estado ---
   const statusOptions = [
-    { value: "CREATED", label: "Creado" },
     { value: "ENVIADO", label: "Enviado" },
     { value: "ENTREGADO", label: "Entregado" },
     { value: "CANCELADO", label: "Cancelado" },
   ];
 
+  // --- AJUSTADO: Cálculo de estadísticas para ser consistente ---
   const stats = {
     total: shipments.length,
-    inTransit: shipments.filter(
+    sent: shipments.filter(
       (s) =>
-        s.status?.toLowerCase().includes("transit") ||
-        s.status?.toLowerCase().includes("transito")
+        s.status?.toLowerCase().includes("sent") ||
+        s.status?.toLowerCase().includes("enviado")
     ).length,
     delivered: shipments.filter(
       (s) =>
@@ -189,7 +191,48 @@ export function ShippingTab() {
       </CardHeader>
 
       <CardContent className="p-4 sm:p-6 space-y-8">
-        {/* --- Panel de Acciones: Simplificado a solo Actualizar Estado --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <Card className="border-blue-200/60 bg-blue-50/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-blue-600">
+                Total de Envíos
+              </CardTitle>
+              <Package2 className="w-5 h-5 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-700">
+                {stats.total}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-amber-200/60 bg-amber-50/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-amber-600">
+                Enviados
+              </CardTitle>
+              <Truck className="w-5 h-5 text-amber-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-amber-700">
+                {stats.sent}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="border-green-200/60 bg-green-50/50">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-green-600">
+                Entregados
+              </CardTitle>
+              <MapPin className="w-5 h-5 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-green-700">
+                {stats.delivered}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
         <Card className="border-slate-200/60">
           <CardHeader>
             <CardTitle className="text-lg font-semibold text-slate-700">
@@ -222,7 +265,8 @@ export function ShippingTab() {
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona un estado..." />
                 </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto bg-black z-50">
+                {/* --- AJUSTADO: Fondo del desplegable y corrección de z-index --- */}
+                <SelectContent className="bg-black z-50">
                   {statusOptions.map((opt) => (
                     <SelectItem key={opt.value} value={opt.value}>
                       {opt.label}
@@ -240,7 +284,6 @@ export function ShippingTab() {
           </CardContent>
         </Card>
 
-        {/* --- Tabla de Resultados --- */}
         <div>
           <div className="flex flex-col sm:flex-row items-center gap-4 mb-5">
             <div className="relative w-full sm:max-w-xs">
@@ -306,8 +349,9 @@ export function ShippingTab() {
                       <TableCell className="font-mono text-xs text-slate-700">
                         {shipment.ordenId}
                       </TableCell>
+                      {/* --- AJUSTADO: Muestra N/A si no hay tracking number --- */}
                       <TableCell className="font-mono text-xs text-slate-600">
-                        {shipment.trackingNumber}
+                        {shipment.trackingNumber || "N/A"}
                       </TableCell>
                       <TableCell>{getStatusBadge(shipment.status)}</TableCell>
                     </TableRow>
